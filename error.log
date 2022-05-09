@@ -1,4 +1,0 @@
-{"level":"error","message":"Hello distributed log files!","service":"user-service"}
-{"level":"error","message":"Hello distributed log files!","service":"user-service"}
-{"level":"error","message":"127.0.0.1 - there's no place like home","service":"user-service"}
-{"level":"error","message":"127.0.0.1 - there's no place like home","service":"user-service"}

@@ -1,6 +1,6 @@
 require('dotenv').config()
 const mongoose = require('mongoose')
-const logger = require('../lib/winston.logger/winston')
+const logger = require('../lib/logger/winston')
 
 const { DB_URI } = process.env
 
@@ -13,8 +13,7 @@ async function connectDB() {
             socketTimeoutMS: 40000,
             serverSelectionTimeoutMS: 20000,
         })
-        logger.info('Info log %')
-        // logger.info('Connect to db established')
+        logger.info('Connect to db established')
     } catch (e) {
         logger.error(new Error('Connect to db failed'))
         console.log(e)

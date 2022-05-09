@@ -5,33 +5,14 @@ class UserController {
     //[POST] /users
     async createUser(req, res) {
         try {
-            let { password, email } = req.body
-            const isExist = await User.findOne({ email })
-            if (isExist) {
+            let { email } = req.body
+            const isExists = await User.findOne({ email })
+            if (isExists) {
                 return res.status(400).json({ error: 'Email already exists' })
             }
-            if (!isExist) {
-                let newUser = new User({
-                    ...req.body,
-                })
-                if (password) {
-                    if (password.trim().length < 8) {
-                        return res.status(400).json({
-                            error: 'Password is must be least 8 characters long',
-                        })
-                    }
-                    if (password.toLowerCase().includes('password')) {
-                        console.log(password)
-                        return res.status(400).json({
-                            error: 'Password does\'n contain "password"',
-                        })
-                    }
-                    const hashPassword = await bcrypt.hash(password, 10)
-                    newUser.password = hashPassword
-                }
-                await newUser.save()
-                res.status(201).json(newUser)
-            }
+            const newUser = new User(req.body)
+            await newUser.save()
+            res.status(201).json(newUser)
         } catch (error) {
             console.log(error)
             res.status(400).json(error)
@@ -80,15 +61,27 @@ class UserController {
             return res.status(400).json({ error: 'Invalid updates!' })
         }
         try {
-            const updatedUser = await User.findByIdAndUpdate(
-                req.params.id,
-                req.body,
-                {
-                    new: true,
-                    runValidators: true,
-                }
-            )
-            res.status(200).json(updatedUser)
+            const user = await User.findById(req.params.id)
+            // integate
+            listUpdates.forEach((update) => (user[update] = req.body[update]))
+
+            await user.save()
+
+            res.status(200).json(user)
+        } catch (error) {
+            res.status(400).json(error)
+        }
+    }
+    //[DELETE] /users/:id
+    async deleteUser(req, res) {
+        try {
+            const userDeleted = await User.findOneAndDelete({
+                _id: req.params.id,
+            })
+            if (!userDeleted) {
+                return res.status(400).json({ error: 'User not found' })
+            }
+            return res.status(204).json({ userDeleted })
         } catch (error) {
             res.status(400).json(error)
         }

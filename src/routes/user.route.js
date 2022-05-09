@@ -3,6 +3,7 @@ const UserController = require('../controllers/User.controller')
 
 const userRouter = express.Router()
 
+userRouter.delete('/:id', UserController.deleteUser)
 userRouter.post('', UserController.createUser)
 userRouter.get('/:id', UserController.getUser)
 userRouter.patch('/:id', UserController.updateUser)

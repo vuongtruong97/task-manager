@@ -1,4 +1,4 @@
-const indexRouter = require('./index.route')
+const indexRouter = require('./home.route')
 const taskRouter = require('./task.route')
 const userRouter = require('./user.route')
 

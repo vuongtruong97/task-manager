@@ -14,7 +14,9 @@ const taskSchema = new Schema(
     },
     { timestamps: true }
 )
-
+taskSchema.pre('save', async function () {
+    console.log('task middleware before save task')
+})
 const Task = mongoose.model('Task', taskSchema)
 
 module.exports = Task

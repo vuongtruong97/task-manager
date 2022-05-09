@@ -1,5 +1,0 @@
-[2022-05-09 16:14:03] [[31merror[39m] Error: Connect to db failed
-    at connectDB (D:\nodejs\udemy_node\node-course\task-manager\src\db\db.js:19:22)
-    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-[2022-05-09 16:14:32] [[31merror[39m] Error: Connect to db failed
-    at connectDB (D:\nodejs\udemy_node\node-course\task-manager\src\db\db.js:19:22)

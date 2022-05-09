@@ -49,14 +49,12 @@ class TaskController {
             return res.status(400).json({ error: 'Invalid updates!' })
         }
         try {
-            const task = await Task.findByIdAndUpdate(req.params.id, req.body, {
-                new: true,
-                lean: true,
-                runValidators: true,
-            })
+            const task = await Task.findById(req.params.id)
             if (!task) {
                 res.status(404).json({ error: 'Task not found' })
             }
+            updatesKey.forEach((update) => (task[update] = req.body[update]))
+            await task.save()
             res.json(task)
         } catch (error) {
             res.status(400).send()
