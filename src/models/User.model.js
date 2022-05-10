@@ -1,6 +1,8 @@
 const mongoose = require('mongoose')
 const validator = require('validator')
 const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
+const { SECRET_KEY, EXPERT_KEY } = process.env
 
 const { Schema } = mongoose
 
@@ -10,6 +12,7 @@ const userSchema = new Schema(
         lastName: { type: String, trim: true },
         email: {
             type: String,
+            unique: true,
             required: true,
             trim: true,
             lowercase: true,
@@ -50,10 +53,45 @@ const userSchema = new Schema(
                 }
             },
         },
+        tokens: [{ token: { type: String, require: true } }],
         role: { type: String, default: 'USER' },
     },
     { timestamps: true }
 )
+
+//mongoose instance method example (must use with instance not Model)
+userSchema.methods.findSimilarName = function (callback) {
+    return mongoose.model('User').find({ firstName: this.firstName }, callback)
+}
+
+userSchema.methods.generateAuthToken = async function () {
+    const user = this
+    const tokenData = { id: this.id }
+
+    const token = await jwt.sign(tokenData, SECRET_KEY, {
+        expiresIn: EXPERT_KEY,
+    })
+    user.tokens = user.tokens.concat({ token })
+    await user.save()
+
+    return token
+}
+
+//mongoose statics method
+userSchema.statics.findByCredentials = async function (email, password) {
+    const user = await User.findOne({ email })
+    if (!user) {
+        throw new Error('Email not match')
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password)
+    console.log(isMatch)
+
+    if (!isMatch) {
+        throw new Error('Password not match')
+    }
+    return user
+}
 
 //mongoose middleware test
 userSchema.pre('init', async function () {
@@ -96,6 +134,7 @@ userSchema.post('save', async function () {
     console.log('save post')
     console.log('----------end------------')
 })
+// hash the plain text password before saving
 userSchema.pre('save', async function () {
     const user = this
     if (user.isModified('password')) {

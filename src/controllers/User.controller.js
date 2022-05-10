@@ -1,8 +1,9 @@
 const User = require('../models/User.model')
-const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
+const { SECRET_KEY } = process.env
 
 class UserController {
-    //[POST] /users
+    //[POST] /users/register
     async createUser(req, res) {
         try {
             let { email } = req.body
@@ -12,7 +13,9 @@ class UserController {
             }
             const newUser = new User(req.body)
             await newUser.save()
-            res.status(201).json(newUser)
+
+            const token = await newUser.generateAuthToken()
+            res.status(201).json({ newUser, token })
         } catch (error) {
             console.log(error)
             res.status(400).json(error)
@@ -84,6 +87,25 @@ class UserController {
             return res.status(204).json({ userDeleted })
         } catch (error) {
             res.status(400).json(error)
+        }
+    }
+    //[POST] /users/login
+    async loginUser(req, res) {
+        try {
+            const user = await User.findByCredentials(
+                req.body.email,
+                req.body.password
+            )
+            const data = { id: user.id }
+            const token = await user.generateAuthToken()
+
+            res.cookie('TOKEN', token, { signed: true })
+            res.json({ user, token })
+        } catch (error) {
+            console.log(error)
+            res.status(400).json({
+                [error.name]: error.message,
+            })
         }
     }
 }
