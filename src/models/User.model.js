@@ -3,6 +3,7 @@ const validator = require('validator')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const { SECRET_KEY, EXPERT_KEY } = process.env
+const Task = require('./Task.model')
 
 const { Schema } = mongoose
 
@@ -21,6 +22,10 @@ const userSchema = new Schema(
                     throw new Error('Please insert a valid email address')
                 }
             },
+        },
+        avatar: {
+            contentType: { type: String },
+            data: { type: Buffer },
         },
         age: {
             type: Number,
@@ -47,17 +52,23 @@ const userSchema = new Schema(
                         minSymbols: 1,
                     })
                 ) {
-                    throw new Error(
-                        'Password must contain at least one number and one uppercase and lowercase letter, and at least 8 or more characters'
-                    )
+                    throw new Error('Password must contain at least one number and one uppercase and lowercase letter, and at least 8 or more characters')
                 }
             },
         },
         tokens: [{ token: { type: String, require: true } }],
         role: { type: String, default: 'USER' },
     },
-    { timestamps: true }
+    { timestamps: true, toJSON: { virtuals: true } }
 )
+
+// virual fiels
+
+userSchema.virtual('tasks', {
+    ref: 'Task',
+    localField: '_id',
+    foreignField: 'owner',
+})
 
 //mongoose instance method example (must use with instance not Model)
 userSchema.methods.findSimilarName = function (callback) {
@@ -77,6 +88,21 @@ userSchema.methods.generateAuthToken = async function () {
     return token
 }
 
+//custom toJSON method to hide secret data
+userSchema.methods.toJSON = function () {
+    const user = this
+    //convert mongoose document to js object
+    const publicProfile = user.toObject()
+
+    delete publicProfile.password
+    delete publicProfile.tokens
+    if (user.avatar.data) {
+        publicProfile.avatar = `/users/${user.id}/avatar`
+    }
+
+    return publicProfile
+}
+
 //mongoose statics method
 userSchema.statics.findByCredentials = async function (email, password) {
     const user = await User.findOne({ email })
@@ -85,7 +111,6 @@ userSchema.statics.findByCredentials = async function (email, password) {
     }
 
     const isMatch = await bcrypt.compare(password, user.password)
-    console.log(isMatch)
 
     if (!isMatch) {
         throw new Error('Password not match')
@@ -93,9 +118,9 @@ userSchema.statics.findByCredentials = async function (email, password) {
     return user
 }
 
-//mongoose middleware test
+//mongoose middleware test (auto run) init --> validate --> remove,update,delete,save
 userSchema.pre('init', async function () {
-    console.log('-----------mongoose middleware-------------')
+    console.log('-----------mongoose user middleware-------------')
     console.log('init pre')
 })
 userSchema.post('init', async function () {
@@ -109,8 +134,16 @@ userSchema.post('validate', async function () {
     console.log('validate post')
 })
 
+// delete user tasks when user is remove (auto run)
 userSchema.pre('remove', async function () {
-    console.log('remove pre')
+    try {
+        const user = this
+        await Task.deleteMany({ owner: user._id })
+        console.log('remove', user.email)
+    } catch (error) {
+        console.log(error)
+        return
+    }
 })
 userSchema.post('remove', async function () {
     console.log('remove post')
@@ -134,7 +167,7 @@ userSchema.post('save', async function () {
     console.log('save post')
     console.log('----------end------------')
 })
-// hash the plain text password before saving
+// hash the plain text password before saving (auto run)
 userSchema.pre('save', async function () {
     const user = this
     if (user.isModified('password')) {
@@ -146,3 +179,13 @@ userSchema.pre('save', async function () {
 const User = mongoose.model('User', userSchema)
 
 module.exports = User
+
+//test virtual field
+async function main() {
+    const user = await User.findById('627b7db563cd6d032ca6129a')
+
+    // call populate to get virtual field
+    await user.populate('tasks')
+    console.log(user.tasks)
+}
+// main()

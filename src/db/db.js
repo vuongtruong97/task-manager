@@ -11,7 +11,7 @@ async function connectDB() {
             maxPoolSize: 5,
             autoIndex: true,
             socketTimeoutMS: 40000,
-            serverSelectionTimeoutMS: 20000,
+            serverSelectionTimeoutMS: 5000,
         })
         logger.info('Connect to db established')
     } catch (e) {
