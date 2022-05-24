@@ -1,12 +1,19 @@
 require('dotenv').config()
 const mongoose = require('mongoose')
 const logger = require('../lib/logger/winston')
+const { DB_URI_PROD, DB_URI_DEV, DB_URI_TEST, NODE_ENV } = process.env
 
-const { DB_URI } = process.env
+let dataBaseUri = DB_URI_PROD
+if (NODE_ENV === 'dev') {
+    dataBaseUri = DB_URI_DEV
+}
+if (NODE_ENV === 'test') {
+    dataBaseUri = DB_URI_TEST
+}
 
 async function connectDB() {
     try {
-        await mongoose.connect(DB_URI, {
+        await mongoose.connect(dataBaseUri, {
             family: 4,
             maxPoolSize: 5,
             autoIndex: true,
